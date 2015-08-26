@@ -1,0 +1,66 @@
+@author - Shiyi Wang - shiywang
+@author - Rohan Sharma - rsharma1
+Artificial Intelligence Project 2
+
+<--------------------------The structure of our app-------------------------->
+File structure:
+  > bin ==> Is a folder which includes the compiled files of our project.
+  > data ==> Includes the data we used to train our AI
+  > src/aiproj/sharwang ==> Includes the classes we created.
+  > src/aiproj/squatter ==> Includes the interfaces our classes implement.
+  > /training.py ==> This script takes the input data from the /data 
+    directory.
+  > training.py learns and generates the weights for evaluation functions 
+    using the gradient descent algorithm.
+Code structure (Maily discusses src/aiproj/sharwang directory):
+  > Board.java ==> This class represents the board in the game of Squatter.
+    In this class we perform the logic of scoring the game, determining the
+    winner of the game, making a move (Only makes a move on the board), 
+    determining captured pieces after a move has been made. It contains ample
+    JDoc and comments which describe the class in more detail.
+  > Cell.java ==> A board is made up of many cells. This cell represents a location
+    on the board. It has several functions which allow you to query/update a cell.
+    It contains ample JDoc and comments which describe the class in more detail.
+  > Vector.java ==> A class which represents a vector which can be used to store 
+    a (x,y) coordinate. We do this so we can store an arraylist of coordinates (A.K.A 
+    Vectors) to check which positions on the board are captured.
+  > SharWang.java ==> This class acts as the intelligent agent, and it also acts as
+    the middle-man between the Referee and other classes. It delegates many duties to
+    other classes. For example it delegates the state management, and winner checking
+    to the Board class. It also contains a list of weights we learnt using the gradient
+    decent algorithm. It also contains our Alpha-Beta pruning algorithm which varies cut-off 
+    depth at different stages of the game.
+<------------------------------------------------------------------------------>
+
+<------------------------- Approach we used ----------------------------------->
+(a) Our search strategy -> We are using the minimimax algorithm with alpha-beta pruning
+    which varies the cutoff depth at different stages of the game. Initially it starts with
+    a cutoff-depth of 3 and after the board gets a few pieces on it, we change the cutoff depth
+    to 4! The time complexity of alpha-beta pruning is at best O(b^(d/2)), where b is the branching factor
+    and d is the depth. However in our case, at each each move, we need to copy over the board to a new board object,
+    the cost of this operation is O(N^2) where N is the dimensions (NXN) of the board. We also need to check for captured pieces.
+    The strategy we use to check for captured pieces is quite simple. To check whether a position is 
+    captured by a piece X, we check vertically above and below the position to find piece X. We also
+    do the same horizontally. If we don't find X in either of these cases, the position is not captured.
+    If we do find X in both these cases, we add all the positions between the current position and position of X to an array.
+    Then we run the same test on all these positions. If they all satisfy the conditions, all the positions in
+    the array are captured. This also costs O(N^2) as we will do this process for every position in the worst case.
+    This means our search strategy will have the time complexity O(b^(d/2)*(N^2)).
+(b) Our evaluation function -> Our evaluation function has 3 main components. During the later stages of the game, we
+    use weights which we learnt using gradient descent learning which will be discussed later. Generally these are the
+    main features of our evaluation function:
+   	1. w1*(our_captured_pieces - opponent_captured_pieces)
+           This is to encourage our AI to place our pieces where we will capture pieces or stop the opponent from capturing pieces. 
+        2 & 3. w2*(our_side_score - our_opponent_side_score) + w3*(our_potential_score - our_opponent_potential_score).
+           This two are the most important parts of our evaluation function. This encourages our AI to form a cross shape and prevent
+           the opponent from forming cross shapes. Why do we do this? Well if we form a cross shape, we have the highest probability
+           of capturing a piece against an opponent. SmartMove function explains the specifics of this. Example shape:
+                                        W W
+                                         W
+                                        W W
+           If white were able to form a shape like this, it has the possibility of capturing 4 pieces. Our evaluation function also has
+           the time complexity O(N^2) as we will need to examine each position on the board to check whether it is captured or not.
+(c) Creative techniques:
+    Our most creative technique is trying to form cross shapes. This gives us the highest probability to capture pieces (As discussed above).
+    To improve our agent, we also implemented gradient decent learning. To do this we generated training data (Inside the data directory), by
+    playing the agent against itself and modifying the referee class and storing the following columns inside our data files  => (1=>Number of pieces captured by white- number of pieces captured by black, 2=> The number of white pieces on the side of a white piece - The number of black pieces on the side of a black piece, 3=> Is our potential score (as discussed in evaluation function section) and 4=>   The score for the corners of a token. If we find one same token there, the score is 1, 2 tokens there, the score is 1+2=3, if we find 3 tokens there, the score is 1+2+3=5, If we find 4 tokens there, the score is 1+2+3+4=10... e.t.c. We generated this data when there were more than 16 pieces on the board (as the first few moves don't matter much in terms of machine learning). We used training.py to work out a set of weights for multiple levels of the game by using gradient descent learning. We then put these set of weights inside SharWang.java to use at the specific levels of the game.
